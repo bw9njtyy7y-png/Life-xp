@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#151a21">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Life XP">
+    <title>Life XP</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="styles.css?v=2">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Personal Progress RPG</p>
+          <h1>Life XP</h1>
+        </div>
+        <button class="icon-button" id="installButton" type="button" hidden aria-label="홈 화면에 설치" title="홈 화면에 설치">
+          <span aria-hidden="true">+</span>
+        </button>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="levelTitle">
+          <div class="avatar-panel">
+            <div class="avatar-scene" aria-hidden="true">
+              <div class="aura"></div>
+              <div class="avatar">
+                <div class="avatar-head"></div>
+                <div class="avatar-body"></div>
+                <div class="avatar-sword"></div>
+              </div>
+            </div>
+            <div class="level-badge">
+              <span>LV</span>
+              <strong id="levelNumber">1</strong>
+            </div>
+            <div class="rank-badge" id="rankBadge">Rookie</div>
+          </div>
+
+          <div class="hero-copy">
+            <div class="level-heading">
+              <h2 id="levelTitle">오늘의 캐릭터 성장</h2>
+              <button class="quiet-button" id="settleRewardsButton" type="button">보상 정산</button>
+            </div>
+            <p id="totalXpText">총 0 XP</p>
+            <div class="xp-track" aria-label="다음 레벨까지 경험치">
+              <div class="xp-fill" id="xpFill"></div>
+            </div>
+            <div class="xp-meta">
+              <span id="currentLevelXpText">0 XP</span>
+              <span id="nextLevelXpText">다음 레벨까지 10 XP</span>
+            </div>
+          </div>
+        </section>
+
+        <nav class="tabs" aria-label="화면 전환">
+          <button class="tab is-active" type="button" data-view="logView">기록</button>
+          <button class="tab" type="button" data-view="rewardsView">보상</button>
+          <button class="tab" type="button" data-view="settingsView">설정</button>
+        </nav>
+
+        <section class="view is-active" id="logView" aria-labelledby="logTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Gain XP</p>
+              <h2 id="logTitle">무엇을 해냈나요?</h2>
+            </div>
+            <button class="primary-button" id="addTaskButton" type="button">과제 추가</button>
+          </div>
+          <div class="task-grid" id="taskGrid"></div>
+          <section class="timeline" aria-labelledby="timelineTitle">
+            <div class="section-heading compact">
+              <h2 id="timelineTitle">최근 기록</h2>
+              <button class="quiet-button" id="clearLogsButton" type="button">기록 비우기</button>
+            </div>
+            <div id="timelineList" class="timeline-list"></div>
+          </section>
+        </section>
+
+        <section class="view" id="rewardsView" aria-labelledby="rewardsTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Level Up Loot</p>
+              <h2 id="rewardsTitle">획득한 카드</h2>
+            </div>
+            <button class="primary-button" id="addRewardButton" type="button">카드 추가</button>
+          </div>
+          <div class="reward-summary">
+            <div>
+              <span>보상 풀</span>
+              <strong id="rewardPoolCount">0</strong>
+            </div>
+            <div>
+              <span>획득 카드</span>
+              <strong id="rewardInventoryCount">0</strong>
+            </div>
+          </div>
+          <div class="reward-grid" id="inventoryGrid"></div>
+          <section class="pool-panel" aria-labelledby="poolTitle">
+            <h2 id="poolTitle">카드 풀</h2>
+            <div id="rewardPoolList" class="editable-list"></div>
+          </section>
+        </section>
+
+        <section class="view" id="settingsView" aria-labelledby="settingsTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Tuning</p>
+              <h2 id="settingsTitle">성장 규칙</h2>
+            </div>
+            <button class="primary-button" id="addLevelButton" type="button">레벨 추가</button>
+          </div>
+          <div class="settings-grid">
+            <section class="settings-panel" aria-labelledby="levelRulesTitle">
+              <h2 id="levelRulesTitle">레벨별 필요 XP</h2>
+              <div id="levelRulesList" class="editable-list"></div>
+            </section>
+            <section class="settings-panel" aria-labelledby="taskRulesTitle">
+              <h2 id="taskRulesTitle">과제별 XP</h2>
+              <div id="taskRulesList" class="editable-list"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="taskDialog">
+      <form method="dialog" id="taskForm" class="dialog-card">
+        <header>
+          <h2 id="taskDialogTitle">과제 추가</h2>
+          <button class="icon-button" value="cancel" type="submit" aria-label="닫기" title="닫기">×</button>
+        </header>
+        <input type="hidden" id="taskId">
+        <label>
+          이름
+          <input id="taskName" required placeholder="예: 영어 공부">
+        </label>
+        <div class="form-row">
+          <label>
+            단위
+            <input id="taskUnit" required placeholder="회, 시간, 편">
+          </label>
+          <label>
+            XP/단위
+            <input id="taskXp" required type="number" min="0" step="1">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            주간 제한
+            <input id="taskLimit" type="number" min="0" step="1" placeholder="없으면 비움">
+          </label>
+          <label>
+            색상
+            <input id="taskColor" type="color">
+          </label>
+        </div>
+        <menu>
+          <button class="quiet-button" value="cancel" type="submit">취소</button>
+          <button class="primary-button" id="saveTaskButton" value="default" type="submit">저장</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog id="rewardDialog">
+      <form method="dialog" id="rewardForm" class="dialog-card">
+        <header>
+          <h2 id="rewardDialogTitle">카드 추가</h2>
+          <button class="icon-button" value="cancel" type="submit" aria-label="닫기" title="닫기">×</button>
+        </header>
+        <input type="hidden" id="rewardId">
+        <label>
+          카드 이름
+          <input id="rewardName" required placeholder="예: 6시간 게임하기">
+        </label>
+        <label>
+          설명
+          <textarea id="rewardDescription" rows="3" placeholder="이 보상을 어떻게 쓸지 적어두세요"></textarea>
+        </label>
+        <menu>
+          <button class="quiet-button" value="cancel" type="submit">취소</button>
+          <button class="primary-button" id="saveRewardButton" value="default" type="submit">저장</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js?v=2"></script>
+  </body>
+</html>
