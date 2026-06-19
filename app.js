@@ -39,6 +39,11 @@ const elements = {
   rewardInventoryCount: document.querySelector("#rewardInventoryCount"),
   avatarPanel: document.querySelector(".avatar-panel"),
   rankBadge: document.querySelector("#rankBadge"),
+  reviewPeriod: document.querySelector("#reviewPeriod"),
+  reviewTask: document.querySelector("#reviewTask"),
+  reviewStats: document.querySelector("#reviewStats"),
+  reviewList: document.querySelector("#reviewList"),
+  exportCsvButton: document.querySelector("#exportCsvButton"),
   levelRulesList: document.querySelector("#levelRulesList"),
   taskRulesList: document.querySelector("#taskRulesList"),
   toast: document.querySelector("#toast"),
@@ -69,6 +74,9 @@ document.querySelector("#addRewardButton").addEventListener("click", () => openR
 document.querySelector("#addLevelButton").addEventListener("click", addLevelRule);
 document.querySelector("#clearLogsButton").addEventListener("click", clearLogs);
 document.querySelector("#settleRewardsButton").addEventListener("click", settleRewards);
+elements.reviewPeriod.addEventListener("change", renderReview);
+elements.reviewTask.addEventListener("change", renderReview);
+elements.exportCsvButton.addEventListener("click", exportCsv);
 elements.taskForm.addEventListener("submit", saveTaskFromDialog);
 elements.rewardForm.addEventListener("submit", saveRewardFromDialog);
 elements.installButton.addEventListener("click", installPwa);
@@ -116,6 +124,7 @@ function render() {
   renderLevel();
   renderTasks();
   renderTimeline();
+  renderReview();
   renderRewards();
   renderSettings();
   saveState();
@@ -310,6 +319,129 @@ function renderTimeline() {
     `;
     elements.timelineList.append(item);
   });
+}
+
+function renderReview() {
+  renderReviewTaskOptions();
+  const logs = filteredReviewLogs();
+  const units = logs.reduce((sum, log) => sum + Number(log.units || 0), 0);
+  const xp = logs.reduce((sum, log) => sum + Number(log.xpGained || 0), 0);
+  const days = new Set(logs.map((log) => dateKey(log.createdAt))).size;
+
+  elements.reviewStats.innerHTML = `
+    <div>
+      <span>기록</span>
+      <strong>${logs.length}</strong>
+    </div>
+    <div>
+      <span>수량</span>
+      <strong>${units}</strong>
+    </div>
+    <div>
+      <span>XP</span>
+      <strong>${xp}</strong>
+    </div>
+    <div>
+      <span>활동일</span>
+      <strong>${days}</strong>
+    </div>
+  `;
+
+  elements.reviewList.innerHTML = logs.length
+    ? ""
+    : `<div class="empty-state">선택한 조건에 맞는 기록이 없어요.</div>`;
+
+  logs.forEach((log) => {
+    const row = document.createElement("div");
+    row.className = "review-row";
+    row.innerHTML = `
+      <div>
+        <p>${escapeHtml(log.taskName)} ${log.units}${escapeHtml(log.unit)}</p>
+        <small>${formatFullDate(log.createdAt)}</small>
+      </div>
+      <strong>+${log.xpGained} XP</strong>
+    `;
+    elements.reviewList.append(row);
+  });
+}
+
+function renderReviewTaskOptions() {
+  const selected = elements.reviewTask.value || "all";
+  const names = [...new Set([
+    ...state.tasks.map((task) => task.name),
+    ...state.logs.map((log) => log.taskName)
+  ])].filter(Boolean).sort((a, b) => a.localeCompare(b, "ko"));
+
+  elements.reviewTask.innerHTML = `<option value="all">전체 과제</option>`;
+  names.forEach((name) => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    elements.reviewTask.append(option);
+  });
+  elements.reviewTask.value = names.includes(selected) ? selected : "all";
+}
+
+function filteredReviewLogs() {
+  const range = periodRange(elements.reviewPeriod.value);
+  const taskName = elements.reviewTask.value;
+  return state.logs.filter((log) => {
+    const inPeriod = log.createdAt >= range.start && log.createdAt < range.end;
+    const inTask = taskName === "all" || log.taskName === taskName;
+    return inPeriod && inTask;
+  });
+}
+
+function periodRange(period) {
+  const now = new Date();
+  if (period === "all") return { start: 0, end: Infinity };
+  if (period === "month") {
+    return {
+      start: new Date(now.getFullYear(), now.getMonth(), 1).getTime(),
+      end: new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime()
+    };
+  }
+
+  const day = (now.getDay() + 6) % 7;
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day).getTime();
+  return { start, end: start + ONE_WEEK };
+}
+
+function dateKey(timestamp) {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
+function exportCsv() {
+  const logs = filteredReviewLogs();
+  if (!logs.length) {
+    showToast("내보낼 기록이 없어요.");
+    return;
+  }
+
+  const header = ["date", "task", "units", "unit", "xp"];
+  const rows = logs.map((log) => [
+    formatCsvDate(log.createdAt),
+    log.taskName,
+    log.units,
+    log.unit,
+    log.xpGained
+  ]);
+  const csv = [header, ...rows]
+    .map((row) => row.map(csvCell).join(","))
+    .join("\n");
+  const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `life-xp-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast("CSV 파일을 만들었어요.");
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
 }
 
 function renderRewards() {
@@ -530,6 +662,27 @@ function formatDate(timestamp) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(timestamp));
+}
+
+function formatFullDate(timestamp) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(timestamp));
+}
+
+function formatCsvDate(timestamp) {
+  const date = new Date(timestamp);
+  const pad = (value) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate())
+  ].join("-") + ` ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function escapeHtml(value) {

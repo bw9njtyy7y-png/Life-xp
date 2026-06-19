@@ -34,7 +34,8 @@ body {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
@@ -512,12 +513,14 @@ h2 {
 }
 
 .timeline-list,
+.review-list,
 .editable-list {
   display: grid;
   gap: 8px;
 }
 
 .timeline-item,
+.review-row,
 .editable-row {
   min-height: 54px;
   padding: 10px;
@@ -527,13 +530,76 @@ h2 {
 }
 
 .timeline-item p,
+.review-row p,
 .editable-row p {
   margin: 0;
 }
 
 .timeline-item small,
+.review-row small,
 .editable-row small {
   color: var(--muted);
+}
+
+.review-panel {
+  padding: 0 14px 14px;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(32, 39, 48, 0.82);
+}
+
+.review-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.review-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.review-controls select,
+.editable-actions input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 10px;
+  color: var(--text);
+  background: #10151b;
+}
+
+.review-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.review-stats div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(16, 21, 27, 0.45);
+}
+
+.review-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.review-stats strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.45rem;
 }
 
 .reward-summary {
@@ -716,6 +782,8 @@ menu {
   }
 
   .reward-summary,
+  .review-controls,
+  .review-stats,
   .form-row {
     grid-template-columns: 1fr;
   }
