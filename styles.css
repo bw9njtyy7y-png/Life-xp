@@ -604,7 +604,7 @@ h2 {
 
 .reward-summary {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -634,7 +634,34 @@ h2 {
   gap: 12px;
 }
 
+.reward-filter {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 21, 27, 0.72);
+}
+
+.filter-button {
+  min-height: 38px;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 850;
+}
+
+.filter-button.is-active {
+  color: #10151b;
+  background: var(--gold);
+}
+
 .reward-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   min-height: 132px;
   padding: 16px;
   background:
@@ -642,9 +669,22 @@ h2 {
     rgba(32, 39, 48, 0.92);
 }
 
+.reward-card.is-used {
+  opacity: 0.72;
+  background:
+    linear-gradient(155deg, rgba(105, 168, 216, 0.12), transparent 45%),
+    rgba(32, 39, 48, 0.78);
+}
+
 .reward-card p {
-  margin: 10px 0 0;
+  margin: 0;
   color: var(--muted);
+}
+
+.reward-card-meta {
+  margin-top: auto;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .pool-panel,

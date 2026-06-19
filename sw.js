@@ -1,9 +1,9 @@
-const CACHE_NAME = "life-xp-cache-v3";
+const CACHE_NAME = "life-xp-cache-v4";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=3",
-  "./app.js?v=3",
+  "./styles.css?v=4",
+  "./app.js?v=4",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-192.png",

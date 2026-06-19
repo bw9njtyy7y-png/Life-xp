@@ -10,7 +10,7 @@
     <title>Life XP</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="styles.css?v=4">
   </head>
   <body>
     <div class="app-shell">
@@ -124,9 +124,18 @@
               <strong id="rewardPoolCount">0</strong>
             </div>
             <div>
-              <span>획득 카드</span>
+              <span>보유 중</span>
               <strong id="rewardInventoryCount">0</strong>
             </div>
+            <div>
+              <span>사용 완료</span>
+              <strong id="rewardUsedCount">0</strong>
+            </div>
+          </div>
+          <div class="reward-filter" aria-label="보상 카드 필터">
+            <button class="filter-button is-active" type="button" data-reward-filter="active">보유 중</button>
+            <button class="filter-button" type="button" data-reward-filter="used">사용 완료</button>
+            <button class="filter-button" type="button" data-reward-filter="all">전체</button>
           </div>
           <div class="reward-grid" id="inventoryGrid"></div>
           <section class="pool-panel" aria-labelledby="poolTitle">
@@ -218,6 +227,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
   </body>
 </html>

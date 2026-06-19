@@ -24,6 +24,7 @@ const defaultState = {
 
 let state = loadState();
 let deferredInstallPrompt = null;
+let rewardFilter = "active";
 
 const elements = {
   levelNumber: document.querySelector("#levelNumber"),
@@ -37,6 +38,7 @@ const elements = {
   rewardPoolList: document.querySelector("#rewardPoolList"),
   rewardPoolCount: document.querySelector("#rewardPoolCount"),
   rewardInventoryCount: document.querySelector("#rewardInventoryCount"),
+  rewardUsedCount: document.querySelector("#rewardUsedCount"),
   avatarPanel: document.querySelector(".avatar-panel"),
   rankBadge: document.querySelector("#rankBadge"),
   reviewPeriod: document.querySelector("#reviewPeriod"),
@@ -67,6 +69,13 @@ const elements = {
 
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => switchView(tab.dataset.view));
+});
+
+document.querySelectorAll("[data-reward-filter]").forEach((button) => {
+  button.addEventListener("click", () => {
+    rewardFilter = button.dataset.rewardFilter;
+    renderRewards();
+  });
 });
 
 document.querySelector("#addTaskButton").addEventListener("click", () => openTaskDialog());
@@ -445,24 +454,63 @@ function csvCell(value) {
 }
 
 function renderRewards() {
-  elements.rewardPoolCount.textContent = state.rewards.length;
-  elements.rewardInventoryCount.textContent = state.inventory.length;
-  elements.inventoryGrid.innerHTML = state.inventory.length
-    ? ""
-    : `<div class="empty-state">레벨업하면 여기에 카드가 쌓입니다.</div>`;
+  const activeRewards = state.inventory.filter((reward) => !reward.usedAt);
+  const usedRewards = state.inventory.filter((reward) => reward.usedAt);
+  const visibleRewards = state.inventory.filter((reward) => {
+    if (rewardFilter === "active") return !reward.usedAt;
+    if (rewardFilter === "used") return Boolean(reward.usedAt);
+    return true;
+  });
 
-  state.inventory.forEach((reward) => {
+  elements.rewardPoolCount.textContent = state.rewards.length;
+  elements.rewardInventoryCount.textContent = activeRewards.length;
+  elements.rewardUsedCount.textContent = usedRewards.length;
+
+  document.querySelectorAll("[data-reward-filter]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.rewardFilter === rewardFilter);
+  });
+
+  elements.inventoryGrid.innerHTML = visibleRewards.length
+    ? ""
+    : `<div class="empty-state">${rewardEmptyText()}</div>`;
+
+  visibleRewards.forEach((reward) => {
+    const isUsed = Boolean(reward.usedAt);
     const card = document.createElement("article");
-    card.className = "reward-card";
+    card.className = `reward-card${isUsed ? " is-used" : ""}`;
     card.innerHTML = `
-      <small>LV ${reward.level} 보상</small>
+      <small>LV ${reward.level} 보상 · ${isUsed ? "사용 완료" : "보유 중"}</small>
       <h3>${escapeHtml(reward.name)}</h3>
       <p>${escapeHtml(reward.description || "획득한 즐거움 카드")}</p>
+      <div class="reward-card-meta">${isUsed ? `${formatDate(reward.usedAt)} 사용` : `${formatDate(reward.createdAt)} 획득`}</div>
+      <button class="${isUsed ? "quiet-button" : "primary-button"}" type="button">${isUsed ? "되돌리기" : "사용 완료"}</button>
     `;
+    card.querySelector("button").addEventListener("click", () => toggleRewardUsed(reward.id));
     elements.inventoryGrid.append(card);
   });
 
   renderRewardPool();
+}
+
+function rewardEmptyText() {
+  if (rewardFilter === "active") return "현재 보유 중인 카드가 없어요.";
+  if (rewardFilter === "used") return "아직 사용 완료한 카드가 없어요.";
+  return "레벨업하면 여기에 카드가 쌓입니다.";
+}
+
+function toggleRewardUsed(inventoryId) {
+  const reward = state.inventory.find((item) => item.id === inventoryId);
+  if (!reward) return;
+
+  if (reward.usedAt) {
+    delete reward.usedAt;
+    showToast(`${reward.name} 카드를 보유 중으로 되돌렸어요.`);
+  } else {
+    reward.usedAt = Date.now();
+    showToast(`${reward.name} 카드를 사용 완료로 표시했어요.`);
+  }
+
+  render();
 }
 
 function renderRewardPool() {
