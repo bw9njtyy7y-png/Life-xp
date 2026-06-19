@@ -10,7 +10,7 @@
     <title>Life XP</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="stylesheet" href="styles.css?v=5">
   </head>
   <body>
     <div class="app-shell">
@@ -219,6 +219,10 @@
           설명
           <textarea id="rewardDescription" rows="3" placeholder="이 보상을 어떻게 쓸지 적어두세요"></textarea>
         </label>
+        <label>
+          등장 레벨
+          <input id="rewardMinLevel" required type="number" min="1" step="1" placeholder="예: 5">
+        </label>
         <menu>
           <button class="quiet-button" value="cancel" type="submit">취소</button>
           <button class="primary-button" id="saveRewardButton" value="default" type="submit">저장</button>
@@ -227,6 +231,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
   </body>
 </html>

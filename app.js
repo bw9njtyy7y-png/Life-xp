@@ -11,11 +11,11 @@ const defaultState = {
   ],
   levels: [10, 25, 45, 70, 100, 135, 175, 220, 270, 325],
   rewards: [
-    { id: crypto.randomUUID(), name: "10만원 마음껏 쓰기", description: "죄책감 없이 원하는 것에 쓰는 날" },
-    { id: crypto.randomUUID(), name: "컴퓨터 업그레이드하기", description: "부품 후보를 고르고 장비를 성장시키기" },
-    { id: crypto.randomUUID(), name: "6시간 게임하기", description: "일정 비우고 제대로 몰입하기" },
-    { id: crypto.randomUUID(), name: "술 약속 잡아서 술마시는 날", description: "좋은 사람과 즐겁게 마시기" },
-    { id: crypto.randomUUID(), name: "가족과 놀러가는 날", description: "가족 일정부터 먼저 잡기" }
+    { id: crypto.randomUUID(), name: "10만원 마음껏 쓰기", description: "죄책감 없이 원하는 것에 쓰는 날", minLevel: 5 },
+    { id: crypto.randomUUID(), name: "컴퓨터 업그레이드하기", description: "부품 후보를 고르고 장비를 성장시키기", minLevel: 10 },
+    { id: crypto.randomUUID(), name: "6시간 게임하기", description: "일정 비우고 제대로 몰입하기", minLevel: 3 },
+    { id: crypto.randomUUID(), name: "술 약속 잡아서 술마시는 날", description: "좋은 사람과 즐겁게 마시기", minLevel: 5 },
+    { id: crypto.randomUUID(), name: "가족과 놀러가는 날", description: "가족 일정부터 먼저 잡기", minLevel: 8 }
   ],
   logs: [],
   inventory: [],
@@ -64,7 +64,8 @@ const elements = {
   rewardDialogTitle: document.querySelector("#rewardDialogTitle"),
   rewardId: document.querySelector("#rewardId"),
   rewardName: document.querySelector("#rewardName"),
-  rewardDescription: document.querySelector("#rewardDescription")
+  rewardDescription: document.querySelector("#rewardDescription"),
+  rewardMinLevel: document.querySelector("#rewardMinLevel")
 };
 
 document.querySelectorAll(".tab").forEach((tab) => {
@@ -114,7 +115,7 @@ function loadState() {
       ...structuredClone(defaultState),
       ...parsed,
       tasks: parsed.tasks?.length ? parsed.tasks : structuredClone(defaultState.tasks),
-      rewards: parsed.rewards?.length ? parsed.rewards : structuredClone(defaultState.rewards),
+      rewards: normalizeRewards(parsed.rewards?.length ? parsed.rewards : structuredClone(defaultState.rewards)),
       levels: parsed.levels?.length ? parsed.levels : structuredClone(defaultState.levels),
       logs: parsed.logs || [],
       inventory: parsed.inventory || [],
@@ -123,6 +124,13 @@ function loadState() {
   } catch {
     return structuredClone(defaultState);
   }
+}
+
+function normalizeRewards(rewards) {
+  return rewards.map((reward) => ({
+    ...reward,
+    minLevel: Math.max(1, Number(reward.minLevel || 1))
+  }));
 }
 
 function saveState() {
@@ -285,12 +293,18 @@ function grantRewards(fromLevel, toLevel) {
 
   const names = [];
   for (let level = fromLevel; level <= toLevel; level += 1) {
-    const reward = state.rewards[Math.floor(Math.random() * state.rewards.length)];
+    const pool = eligibleRewardsForLevel(level);
+    if (!pool.length) {
+      names.push(`LV ${level}: 받을 수 있는 카드 없음`);
+      continue;
+    }
+    const reward = pool[Math.floor(Math.random() * pool.length)];
     state.inventory.unshift({
       id: crypto.randomUUID(),
       rewardId: reward.id,
       name: reward.name,
       description: reward.description,
+      minLevel: reward.minLevel || 1,
       level,
       createdAt: Date.now()
     });
@@ -298,6 +312,10 @@ function grantRewards(fromLevel, toLevel) {
   }
   state.settledLevel = Math.max(state.settledLevel, toLevel);
   showToast(`레벨업! ${names.join(" · ")}`);
+}
+
+function eligibleRewardsForLevel(level) {
+  return state.rewards.filter((reward) => Number(reward.minLevel || 1) <= level);
 }
 
 function settleRewards() {
@@ -521,7 +539,7 @@ function renderRewardPool() {
     row.innerHTML = `
       <div>
         <p>${escapeHtml(reward.name)}</p>
-        <small>${escapeHtml(reward.description || "설명 없음")}</small>
+        <small>LV ${reward.minLevel || 1}부터 · ${escapeHtml(reward.description || "설명 없음")}</small>
       </div>
       <div class="editable-actions">
         <button class="quiet-button" type="button">수정</button>
@@ -642,6 +660,7 @@ function openRewardDialog(reward = null) {
   elements.rewardId.value = reward?.id || "";
   elements.rewardName.value = reward?.name || "";
   elements.rewardDescription.value = reward?.description || "";
+  elements.rewardMinLevel.value = reward?.minLevel || 1;
   elements.rewardDialog.showModal();
 }
 
@@ -652,7 +671,8 @@ function saveRewardFromDialog(event) {
   const reward = {
     id: elements.rewardId.value || crypto.randomUUID(),
     name: elements.rewardName.value.trim(),
-    description: elements.rewardDescription.value.trim()
+    description: elements.rewardDescription.value.trim(),
+    minLevel: Math.max(1, Number(elements.rewardMinLevel.value || 1))
   };
 
   const index = state.rewards.findIndex((item) => item.id === reward.id);
